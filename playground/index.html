@@ -502,13 +502,13 @@ $("#testLlm").onclick = () => runTest($("#testLlm"), "/api/test/llm", {llm: llmC
 // --- rendering a run: one reference diagram, animated, with a tab per node ----
 const NODES = {
   user:        { x: 80,  y: 150, icon: "👤", label: "User",          sub: "sends a message" },
-  input:       { x: 255, y: 150, cp: "input",       num: "1",  label: "Input check",       sub: "user message" },
+  input:       { x: 255, y: 150, cp: "input",       num: "1",  label: "Guardrail · Input check",       sub: "user message" },
   agent:       { x: 490, y: 150, icon: "🤖", label: "Agent",         sub: "the LLM decides", labelUp: true },
-  output:      { x: 725, y: 150, cp: "output",      num: "3",  label: "Output check",      sub: "reply" },
+  output:      { x: 725, y: 150, cp: "output",      num: "3",  label: "Guardrail · Output check",      sub: "reply" },
   reply:       { x: 910, y: 150, icon: "💬", label: "Reply",         sub: "what the user sees" },
-  tool_call:   { x: 335, y: 340, cp: "tool_call",   num: "2a", label: "Tool-call check",   sub: "before it runs", capSide: "left" },
+  tool_call:   { x: 335, y: 340, cp: "tool_call",   num: "2a", label: "Guardrail · Tool-call check",   sub: "before it runs", capSide: "left" },
   tool:        { x: 490, y: 340, icon: "🔧", label: "Tool",          sub: "email, web, DB…" },
-  tool_result: { x: 645, y: 340, cp: "tool_result", num: "2b", label: "Tool-result check", sub: "before agent reads", capSide: "right" },
+  tool_result: { x: 645, y: 340, cp: "tool_result", num: "2b", label: "Guardrail · Tool-result check", sub: "before agent reads", capSide: "right" },
 };
 const ORDER = ["user", "input", "agent", "tool_call", "tool", "tool_result", "output", "reply"];
 const EDGES = {
@@ -764,7 +764,35 @@ function visitHtml(s, n){
   return `<div class="visit"><div class="vh"><span class="b ${s.action}">${esc(e.action)}</span>${ACTION_WORD[e.action] || ""}<span class="ms">${esc(e.via)} · ${e.ms} ms</span></div>
     <div class="iogrid"><div><div class="k">in</div><div class="v">${d ? d.before : esc(e.input)}</div></div>
     <div><div class="k">out</div><div class="v">${STOP(e.action) ? '<span class="na">nothing passes — stopped</span>' : d ? d.after : esc(e.output ?? e.input) + ' <span class="na">(unchanged)</span>'}</div></div></div>
-    ${e.nano ? nanoHtml(e) : text || regs.length ? `<div class="why">${esc(text)}${regs.length ? `<div class="regs">${regs.map(x => `<span class="reg">⚖️ ${esc(x)}</span>`).join("")}</div>` : ""}</div>` : ""}</div>`;
+    ${!e.nano && /guard unavailable/.test(text || "") ? `<div class="reco BLOCK" style="margin:10px 12px"><div class="k">The guardrail did not answer</div>${/429/.test(text) ? "ProofAgent Nano returned <b>429 Too Many Requests</b>: too many calls in a short time." : esc(text)} With no decision, the guardrail <b>fails closed</b>: it blocks the step rather than let unchecked data through. Wait a few seconds and run again to see Nano's full result.</div>` : ""}
+    ${!e.nano && /guard unavailable/.test(text || "") ? "" : e.nano ? nanoHtml(e) : /local/i.test(e.via || "") ? localHtml(e, e.checkpoint) : text || regs.length ? `<div class="why">${esc(text)}${regs.length ? `<div class="regs">${regs.map(x => `<span class="reg">⚖️ ${esc(x)}</span>`).join("")}</div>` : ""}</div>` : ""}</div>`;
+}
+
+// Local rules carry no model scores, so the card shows what the rule means: decision, AI-risk category and family, and masked personal data.
+const LOCAL_RISKS = [
+  [/developer mode|unrestricted|you are now/, "Jailbreak", "Agent and prompt security"],
+  [/system prompt|reveal|print|show|repeat/, "System prompt extraction", "Agent and prompt security"],
+  [/send|email|post|upload|forward|curl/, "Data exfiltration", "Agent and prompt security"],
+  [/rm -rf|drop table|chmod|mkfs|:\\\(/, "Malicious tool call", "Cybersecurity / model integrity"],
+  [/ignore|disregard|تجاهل/, "Prompt injection", "Agent and prompt security"]];
+const LOCAL_PII = { EMAIL: ["Email address", "Contact"], CARD: ["Payment card number", "Payment card"], PHONE: ["Phone number", "Contact"], IBAN: ["IBAN", "Bank / financial"] };
+function localHtml(e, cp){
+  const act = norm(e.action), risks = [], seen = new Set();
+  const add = (t, f, how) => { if (!seen.has(t)) { seen.add(t); risks.push({ t, f, how }); } };
+  for (const r of e.reasons || []) {
+    const m = r.match(/^(?:matched|injection removed): (.+)$/);
+    if (m) { const hit = LOCAL_RISKS.find(([re]) => re.test(m[1])) || LOCAL_RISKS[4];
+      add(cp === "tool_result" && hit[1] === "Prompt injection" ? "Indirect prompt injection" : cp === "input" && hit[1] === "Prompt injection" ? "Direct prompt injection" : hit[1], hit[2], m[1]); }
+    if (r === "hidden instructions removed") { add("Indirect prompt injection", "Agent and prompt security", "hidden <!-- … --> text"); add("Obfuscation / evasion", "Agent and prompt security", "instruction hidden from the reader"); }
+  }
+  const toks = [...new Set(((e.output || "").match(/\[(EMAIL|CARD|PHONE|IBAN)#\d+\]/g) || []))];
+  if (!risks.length && !toks.length) return `<div class="nano"><div class="nh"><b>Guardrail result</b><span class="b ${act}">${esc(e.action)}</span><span style="margin-left:auto;color:var(--muted)">No risk and no personal data found</span></div></div>`;
+  return `<div class="nano"><div class="nh"><b>Guardrail result</b><span class="b ${act}">${esc(e.action)}</span>
+      <span style="margin-left:auto;color:var(--muted)">${risks.length ? risks.length + " AI risk" + (risks.length > 1 ? "s" : "") : ""}${risks.length && toks.length ? " · " : ""}${toks.length ? toks.length + " personal data item" + (toks.length > 1 ? "s" : "") + " masked" : ""}</span></div>
+    ${risks.length ? `<div class="nsec"><h5>AI risk category</h5>${risks.map(r => `<div class="find"><span class="b ${act}">${esc(e.action)}</span><div><div class="t">${esc(r.t)}</div><div class="w"><i>${esc(r.f)}</i> · rule: <code>${esc(r.how)}</code></div></div><span></span></div>`).join("")}</div>` : ""}
+    ${toks.length ? `<div class="nsec"><h5>Personal data · ${toks.length} found and masked</h5>${toks.map(t => { const k = t.slice(1).split("#")[0], d = LOCAL_PII[k] || [k, ""];
+        return `<div class="find"><span class="pill">${esc(t)}</span><div><div class="t">${esc(d[0])}</div><div class="w"><i>${esc(d[1])}</i> · replaced before the next step</div></div><span></span></div>`; }).join("")}</div>` : ""}
+  </div>`;
 }
 
 function nanoHtml(e){
@@ -773,15 +801,14 @@ function nanoHtml(e){
   const req = n.request || {}, meta = n.nano || {};
   const d = n.decision || {}, rep = n.report || {}, act = norm(d.action || e.action);
   const reasons = new Set(d.reasons || []);
-  const risks = (n.findings || []).filter(f => f.kind === "risk").sort((a, b) => reasons.has(b.id) - reasons.has(a.id) || (b.confidence || 0) - (a.confidence || 0));
+  const risks = (n.findings || []).filter(f => f.kind === "risk").sort((a, b) => reasons.has(b.id) - reasons.has(a.id));
   const spans = (n.findings || []).filter(f => f.kind === "span");
   const rules = (n.findings || []).filter(f => f.kind === "rule");
-  const conf = (c, f) => c == null ? (f && f.band ? `<span class="conf" title="Regex rules have no confidence score. ProofAgent Nano returns a model score per risk.">${esc(f.band)}</span>` : "") : `<span class="conf">${Math.round(c * 100)}%<span class="bar"><i style="width:${Math.round(c * 100)}%"></i></span></span>`;
   const risk = f => `<div class="find"><span class="b ${norm(f.action) || ""}">${esc(f.action || "")}</span>
       <div>${reasons.has(f.id) ? '<div class="why-tag">reason for the decision</div>' : ""}<div class="t">${esc(f.title || f.risk)}</div>
-      <div class="w">${esc(f.what || "")}${f.risk_family ? ` · <i>${esc(f.risk_family)}</i>` : ""}</div></div>${conf(f.confidence, f)}</div>`;
+      <div class="w">${esc(f.what || "")}${f.risk_family ? ` · <i>${esc(f.risk_family)}</i>` : ""}</div></div><span></span></div>`;
   const span = f => `<div class="find"><span class="pill">${esc(f.placeholder || f.subfamily)}</span>
-      <div><div class="t">${esc(f.title || f.subfamily)}</div><div class="w">${esc(f.what_to_do || "")}</div></div>${conf(f.confidence, f)}</div>`;
+      <div><div class="t">${esc(f.title || f.subfamily)}</div><div class="w">${esc(f.what_to_do || "")}</div></div><span></span></div>`;
   const rule = f => `<div class="find"><span class="b ${norm(f.action) || ""}">${esc(f.action || "")}</span><div><div class="t">Policy rule ${esc(f.id)}</div><div class="w">${esc(f.reason || "")}</div></div><span></span></div>`;
   const regs = n.regulations || [];
   const obl = rep.obligations || (n.obligations || []).map(o => `${o.id}: ${o.duty}`);
@@ -794,7 +821,6 @@ function nanoHtml(e){
     ${risks.length ? `<div class="nsec"><h5>Why · ${risks.length} risk${risks.length > 1 ? "s" : ""} detected</h5>${risks.map(risk).join("")}</div>` : ""}
     ${rules.length ? `<div class="nsec"><h5>Your policy</h5>${rules.map(rule).join("")}</div>` : ""}
     ${spans.length ? `<div class="nsec"><h5>Personal data · ${spans.length} found and masked</h5>${spans.map(span).join("")}</div>` : ""}
-    ${meta.engine && /local/i.test(meta.engine) ? `<div class="hint" style="margin:8px 12px">Offline regex stand-in: it names the risk class and the PII, but has no confidence scores. Choose <b>ProofAgent Nano</b> as the guard for real model scores per risk.</div>` : ""}
     ${regs.length ? `<div class="nsec"><h5>Regulations that apply</h5>${regs.map(r => `<div class="regrow"><div><b>⚖️ ${esc(r.framework)}</b> <span class="cite">${esc(r.cite || "")}</span></div><div class="w">${esc(r.meaning || "")}</div></div>`).join("")}</div>` : ""}
     ${obl && obl.length ? `<div class="nsec"><h5>Obligations</h5>${obl.map(o => `<div class="w" style="font-size:12.5px;margin-bottom:4px">• ${esc(o)}</div>`).join("")}</div>` : ""}
     <div class="nmeta">${[req.mode, req.direction, req.destination && "→ " + req.destination, meta.language && "lang " + meta.language,

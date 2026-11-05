@@ -77,7 +77,6 @@ class LocalGuard(Guard):
     """Good enough to learn the pattern. Not a production guardrail.
 
     Returns a Nano-shaped result in `raw` (findings, PII, regulations) so tools can show it the same way.
-    Regex rules have no confidence score: each finding says "rule match" instead.
     """
     name = "local"
 
@@ -85,7 +84,7 @@ class LocalGuard(Guard):
         original, low = text, text.lower()
         reasons, risks = [], []
         def risk(rid, title, family, action, what):
-            risks.append({"id": rid, "kind": "risk", "action": action, "band": "rule match", "confidence": None,
+            risks.append({"id": rid, "kind": "risk", "action": action,
                           "id_risk": rid, "explanation": {"title": title, "what": what, "risk_family": family}})
         if checkpoint == "tool_result" and _HIDDEN.search(text):
             text = _HIDDEN.sub("", text)
@@ -108,7 +107,7 @@ class LocalGuard(Guard):
             def sub(_m, kind=kind, title=title):
                 n = sum(s["subfamily"] == kind for s in spans) + 1
                 spans.append({"id": f"{kind}#{n}", "kind": "span", "action": "MASK", "family": "pii", "subfamily": kind,
-                              "placeholder": f"[{kind}#{n}]", "confidence": None, "band": "rule match",
+                              "placeholder": f"[{kind}#{n}]", 
                               "explanation": {"title": title, "what_to_do": "Masked before the model or the user sees it."}})
                 return f"[{kind}#{n}]"
             masked = re.sub(p, sub, masked)
@@ -153,16 +152,40 @@ _NANO_ACTION = {"PASS": "ALLOW", "FLAG": "ALLOW", "MASK": "MASK", "SANITISE": "M
                 "REVIEW": "REVIEW", "GUARDIAN_ALERT": "REVIEW", "BLOCK": "BLOCK"}
 
 
+def post_json(req, timeout, retries=2):
+    """POST and parse JSON. On 429 (rate limit), wait as Nano asks (Retry-After, at most 5 s) and try again."""
+    import time
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or attempt == retries:
+                raise
+            time.sleep(min(float(e.headers.get("Retry-After") or 1 + attempt), 5))
+
+
+def _load_dotenv():
+    """Read KEY=value lines from the repo's .env (git-ignored) into the environment, if not already set."""
+    env = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+    if os.path.exists(env):
+        for line in open(env, encoding="utf-8"):
+            k, sep, v = line.strip().partition("=")
+            if sep and not k.startswith("#"):
+                os.environ.setdefault(k.strip(), v.strip().strip('"\''))
+
+
 class NanoGuard(Guard):
     """ProofAgent Nano (https://nano.proofagent.ai). Fails closed on any error."""
     name = "nano"
 
     def __init__(self, api_key: str | None = None, url: str | None = None, timeout: float = 10):
+        _load_dotenv()
         self.api_key = api_key or os.environ.get("PROOFAGENT_NANO_API_KEY")
         self.url = (url or os.environ.get("PROOFAGENT_NANO_URL", "https://nano.proofagent.ai")).rstrip("/")
         self.timeout = timeout
         if not self.api_key:
-            raise RuntimeError("Set PROOFAGENT_NANO_API_KEY (get one at nano.proofagent.ai)")
+            raise RuntimeError("Set PROOFAGENT_NANO_API_KEY, or put it in the repo's .env file (get one at app.proofagent.ai)")
 
     def check(self, text: str, checkpoint: str = "input") -> Decision:
         body = {"text": text, "direction": _NANO_DIRECTION[checkpoint]}
@@ -172,8 +195,7 @@ class NanoGuard(Guard):
             f"{self.url}/v1/scan", data=json.dumps(body).encode(), method="POST",
             headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                r = json.load(resp)
+            r = post_json(req, self.timeout)
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             return Decision("BLOCK", None, [f"guard unavailable, failing closed: {e}"])
         action = _NANO_ACTION.get(r.get("decision", {}).get("action"), "BLOCK")

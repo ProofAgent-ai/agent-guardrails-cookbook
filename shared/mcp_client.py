@@ -14,18 +14,19 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "guards" / "python"))
-from guard import LocalGuard  # noqa: E402
+from guard import LocalGuard, _load_dotenv, post_json  # noqa: E402
 
 
 class NanoMCP:
     def __init__(self, url=None, api_key=None, timeout=10):
         base = (url or os.environ.get("PROOFAGENT_NANO_URL", "https://nano.proofagent.ai")).rstrip("/")
         self.url = base + "/mcp"
+        _load_dotenv()
         self.api_key = api_key or os.environ.get("PROOFAGENT_NANO_API_KEY")
         self.timeout = timeout
         self._id = 0
         if not self.api_key:
-            raise RuntimeError("Set PROOFAGENT_NANO_API_KEY (get one at nano.proofagent.ai)")
+            raise RuntimeError("Set PROOFAGENT_NANO_API_KEY, or put it in the repo's .env file (get one at app.proofagent.ai)")
 
     def call(self, name: str, /, **arguments) -> dict:
         self._id += 1
@@ -35,8 +36,7 @@ class NanoMCP:
             "Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream"})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                result = json.load(resp).get("result", {})
+            result = post_json(req, self.timeout).get("result", {})
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             return {"action": "BLOCK", "use_this": None, "reason": f"guard unavailable, failing closed: {e}"}
         if result.get("isError"):

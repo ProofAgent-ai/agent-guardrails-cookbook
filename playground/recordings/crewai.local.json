@@ -519,7 +519,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -530,7 +529,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -586,8 +584,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -600,8 +596,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -746,7 +740,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -757,7 +750,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -813,8 +805,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -827,8 +817,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -977,7 +965,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -988,7 +975,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -1044,8 +1030,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -1058,8 +1042,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -1244,7 +1226,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'.",
@@ -1289,8 +1270,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -1361,7 +1340,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'.",
@@ -1406,8 +1384,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -1480,7 +1456,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'.",
@@ -1525,8 +1500,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -1807,7 +1780,6 @@
           "id": "indirect_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "indirect_injection",
           "title": "Hidden instructions in tool output",
           "what": "An HTML comment carried instructions for the model; it was removed.",
@@ -1817,7 +1789,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'; the text was removed.",
@@ -1827,7 +1798,6 @@
           "id": "data_exfiltration",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "data_exfiltration",
           "title": "Data exfiltration",
           "what": "Matched rule '(send|email|post|upload|forward) .{0,40}(customer list|all (users|customers)|database|credentials|api keys?)'; the text was removed.",
@@ -1874,8 +1844,6 @@
            "id": "indirect_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "indirect_injection",
            "explanation": {
             "title": "Hidden instructions in tool output",
@@ -1887,8 +1855,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -1900,8 +1866,6 @@
            "id": "data_exfiltration",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "data_exfiltration",
            "explanation": {
             "title": "Data exfiltration",
@@ -2204,7 +2168,6 @@
           "id": "indirect_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "indirect_injection",
           "title": "Hidden instructions in tool output",
           "what": "An HTML comment carried instructions for the model; it was removed.",
@@ -2214,7 +2177,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'; the text was removed.",
@@ -2224,7 +2186,6 @@
           "id": "data_exfiltration",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "data_exfiltration",
           "title": "Data exfiltration",
           "what": "Matched rule '(send|email|post|upload|forward) .{0,40}(customer list|all (users|customers)|database|credentials|api keys?)'; the text was removed.",
@@ -2271,8 +2232,6 @@
            "id": "indirect_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "indirect_injection",
            "explanation": {
             "title": "Hidden instructions in tool output",
@@ -2284,8 +2243,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -2297,8 +2254,6 @@
            "id": "data_exfiltration",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "data_exfiltration",
            "explanation": {
             "title": "Data exfiltration",
@@ -2603,7 +2558,6 @@
           "id": "indirect_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "indirect_injection",
           "title": "Hidden instructions in tool output",
           "what": "An HTML comment carried instructions for the model; it was removed.",
@@ -2613,7 +2567,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection",
           "what": "Matched rule 'ignore (all |any )?(previous|prior|above) (instructions|rules)'; the text was removed.",
@@ -2623,7 +2576,6 @@
           "id": "data_exfiltration",
           "kind": "risk",
           "action": "SANITISE",
-          "band": "rule match",
           "risk": "data_exfiltration",
           "title": "Data exfiltration",
           "what": "Matched rule '(send|email|post|upload|forward) .{0,40}(customer list|all (users|customers)|database|credentials|api keys?)'; the text was removed.",
@@ -2670,8 +2622,6 @@
            "id": "indirect_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "indirect_injection",
            "explanation": {
             "title": "Hidden instructions in tool output",
@@ -2683,8 +2633,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection",
@@ -2696,8 +2644,6 @@
            "id": "data_exfiltration",
            "kind": "risk",
            "action": "SANITISE",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "data_exfiltration",
            "explanation": {
             "title": "Data exfiltration",
@@ -3039,7 +2985,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -3050,7 +2995,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -3061,7 +3005,6 @@
           "id": "PHONE#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[PHONE#1]",
           "family": "pii",
           "subfamily": "PHONE",
@@ -3118,8 +3061,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3132,8 +3073,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3146,8 +3085,6 @@
            "family": "pii",
            "subfamily": "PHONE",
            "placeholder": "[PHONE#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Phone number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3453,7 +3390,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -3464,7 +3400,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -3475,7 +3410,6 @@
           "id": "PHONE#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[PHONE#1]",
           "family": "pii",
           "subfamily": "PHONE",
@@ -3532,8 +3466,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3546,8 +3478,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3560,8 +3490,6 @@
            "family": "pii",
            "subfamily": "PHONE",
            "placeholder": "[PHONE#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Phone number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3869,7 +3797,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -3880,7 +3807,6 @@
           "id": "CARD#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[CARD#1]",
           "family": "pii",
           "subfamily": "CARD",
@@ -3891,7 +3817,6 @@
           "id": "PHONE#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[PHONE#1]",
           "family": "pii",
           "subfamily": "PHONE",
@@ -3948,8 +3873,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3962,8 +3885,6 @@
            "family": "pii",
            "subfamily": "CARD",
            "placeholder": "[CARD#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Payment card number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -3976,8 +3897,6 @@
            "family": "pii",
            "subfamily": "PHONE",
            "placeholder": "[PHONE#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Phone number",
             "what_to_do": "Masked before the model or the user sees it."
@@ -4169,7 +4088,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -4218,8 +4136,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -4315,7 +4231,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -4364,8 +4279,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -4463,7 +4376,6 @@
           "id": "EMAIL#1",
           "kind": "span",
           "action": "MASK",
-          "band": "rule match",
           "placeholder": "[EMAIL#1]",
           "family": "pii",
           "subfamily": "EMAIL",
@@ -4512,8 +4424,6 @@
            "family": "pii",
            "subfamily": "EMAIL",
            "placeholder": "[EMAIL#1]",
-           "confidence": null,
-           "band": "rule match",
            "explanation": {
             "title": "Email address",
             "what_to_do": "Masked before the model or the user sees it."
@@ -4631,7 +4541,6 @@
           "id": "system_prompt_leak",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "system_prompt_leak",
           "title": "System prompt extraction",
           "what": "Matched rule '(reveal|print|show|repeat) (your|the) (system prompt|instructions)'.",
@@ -4676,8 +4585,6 @@
            "id": "system_prompt_leak",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "system_prompt_leak",
            "explanation": {
             "title": "System prompt extraction",
@@ -4748,7 +4655,6 @@
           "id": "system_prompt_leak",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "system_prompt_leak",
           "title": "System prompt extraction",
           "what": "Matched rule '(reveal|print|show|repeat) (your|the) (system prompt|instructions)'.",
@@ -4793,8 +4699,6 @@
            "id": "system_prompt_leak",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "system_prompt_leak",
            "explanation": {
             "title": "System prompt extraction",
@@ -4867,7 +4771,6 @@
           "id": "system_prompt_leak",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "system_prompt_leak",
           "title": "System prompt extraction",
           "what": "Matched rule '(reveal|print|show|repeat) (your|the) (system prompt|instructions)'.",
@@ -4912,8 +4815,6 @@
            "id": "system_prompt_leak",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "system_prompt_leak",
            "explanation": {
             "title": "System prompt extraction",
@@ -5006,7 +4907,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (French)",
           "what": "Matched rule 'ignore[sz]? (les|toutes les) instructions'.",
@@ -5051,8 +4951,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (French)",
@@ -5123,7 +5021,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (French)",
           "what": "Matched rule 'ignore[sz]? (les|toutes les) instructions'.",
@@ -5168,8 +5065,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (French)",
@@ -5242,7 +5137,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (French)",
           "what": "Matched rule 'ignore[sz]? (les|toutes les) instructions'.",
@@ -5287,8 +5181,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (French)",
@@ -5381,7 +5273,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (Arabic)",
           "what": "Matched rule 'تجاهل (جميع |كل )?التعليمات'.",
@@ -5426,8 +5317,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (Arabic)",
@@ -5498,7 +5387,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (Arabic)",
           "what": "Matched rule 'تجاهل (جميع |كل )?التعليمات'.",
@@ -5543,8 +5431,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (Arabic)",
@@ -5617,7 +5503,6 @@
           "id": "prompt_injection",
           "kind": "risk",
           "action": "BLOCK",
-          "band": "rule match",
           "risk": "prompt_injection",
           "title": "Prompt injection (Arabic)",
           "what": "Matched rule 'تجاهل (جميع |كل )?التعليمات'.",
@@ -5662,8 +5547,6 @@
            "id": "prompt_injection",
            "kind": "risk",
            "action": "BLOCK",
-           "band": "rule match",
-           "confidence": null,
            "id_risk": "prompt_injection",
            "explanation": {
             "title": "Prompt injection (Arabic)",

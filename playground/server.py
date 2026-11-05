@@ -54,15 +54,27 @@ MCP_CHECKPOINT = {"check_user_message": "input", "check_tool_call": "tool_call",
 
 # --- Tracing wrappers: record every guard decision and model step --------------
 
+SCORE_FIELDS = {"confidence", "band"}   # never shown, logged or recorded: no model scores leave the playground
+
+
+def strip_scores(o):
+    if isinstance(o, dict):
+        return {k: strip_scores(v) for k, v in o.items() if k not in SCORE_FIELDS}
+    if isinstance(o, list):
+        return [strip_scores(v) for v in o]
+    return o
+
+
 def nano_detail(raw):
-    """The parts of a Nano /v1/scan response worth showing: decision, recommendation, why, regulations."""
+    """The parts of a Nano /v1/scan response worth showing: decision, recommendation, why, regulations.
+    Model scores (confidence, band) are removed, including from the raw JSON."""
     if not isinstance(raw, dict) or "decision" not in raw:
         return None
+    raw = strip_scores(raw)
     def finding(f):
         ex = f.get("explanation") or {}
         return {k: v for k, v in {
-            "id": f.get("id"), "kind": f.get("kind"), "action": f.get("action"), "band": f.get("band"),
-            "confidence": f.get("confidence"), "risk": f.get("id_risk"), "placeholder": f.get("placeholder"),
+            "id": f.get("id"), "kind": f.get("kind"), "action": f.get("action"), "risk": f.get("id_risk"), "placeholder": f.get("placeholder"),
             "family": f.get("family"), "subfamily": f.get("subfamily"), "title": ex.get("title"),
             "what": ex.get("what"), "risk_family": ex.get("risk_family"), "what_to_do": ex.get("what_to_do"),
             "reason": f.get("reason")}.items() if v is not None}
