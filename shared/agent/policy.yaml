@@ -1,0 +1,14 @@
+# ProofAgent Nano policy for this agent. Rules can only make a decision stricter.
+# Activate it for your workspace on app.proofagent.ai (Policies), or pass it inline as `policy`
+# to /v1/scan or the MCP scan_text tool. Check it first with the free validate_policy MCP tool.
+policy: customer-support-agent
+version: 1
+rules:
+  - id: no-bulk-export
+    when: { term: ["customer list", "customer database", "all customers"] }
+    then: BLOCK
+    reason: Bulk customer data never leaves through the support agent
+  - id: no-emails-out
+    when: { pii_subfamily: [EMAIL], direction: [output] }
+    then: REVIEW
+    reason: Email addresses in outgoing text need a human check

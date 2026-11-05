@@ -37,11 +37,11 @@ _nodes = _load("api/guard_nodes.py", "hybrid_guard_nodes")
 _mcp_agent = _load("mcp/agent.py", "hybrid_mcp_agent")
 
 
-def build_graph(guard, mcp, model=naive_model):
+def build_graph(guard, mcp, model=naive_model, policy=None):
     guard_input = _nodes.make_guard_nodes(guard)[0]          # checkpoint 1 over the API
     g = StateGraph(MessagesState)
     g.add_node("guard_input", guard_input, destinations=("agent", "__end__"))
-    g.add_node("agent", _mcp_agent.make_guarded_agent(mcp, model, check_input=False))   # 2a, 2b, 3 over MCP
+    g.add_node("agent", _mcp_agent.make_guarded_agent(mcp, model, check_input=False, policy=policy))   # 2a, 2b, 3 over MCP
     g.add_node("tools", ToolNode(TOOLS))
     g.add_edge(START, "guard_input")
     g.add_conditional_edges("agent", tools_condition, ["tools", END])

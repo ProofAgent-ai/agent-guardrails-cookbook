@@ -20,8 +20,9 @@
       case "test/llm":   return json({ checks: [{ name: "Replay demo", ok: null, ms: 0,
                            detail: "Connection tests need the live playground: use “Run it live”." }] });
       case "run": {
-        const rec = d.recordings[body.guard] || d.recordings.local;
-        const run = rec && rec.runs.find(r => r.message.trim() === String(body.message || "").trim());
+        // Prefer the chosen guard's recording; fall back to the other one for scenarios it doesn't have yet.
+        const find = rec => rec && rec.runs.find(r => r.message.trim() === String(body.message || "").trim());
+        const run = find(d.recordings[body.guard]) || find(d.recordings.local) || find(d.recordings.nano);
         if (!run) return json({ error: "This demo replays recorded runs. Pick one of the scenarios above, "
                                      + "or type your own message in the live playground: " + d.codespaces });
         const results = body.mode === "compare" ? run.results : run.results.filter(r => r.mode === body.mode);

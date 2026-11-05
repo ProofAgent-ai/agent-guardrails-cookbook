@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT / "shared"))
 
 from guard import LocalGuard, NanoGuard  # noqa: E402
 from mcp_client import LocalMCP, NanoMCP  # noqa: E402
+from tool_policy import ToolPolicy  # noqa: E402
 from models import PROVIDERS, make_llm, naive  # noqa: E402
 
 
@@ -103,6 +104,19 @@ class TraceMCP:
         return r
 
 
+class TracePolicy:
+    """Records the tool policy's decision as a checkpoint 2a event, ahead of the guardrail's."""
+    def __init__(self, events):
+        self.inner, self.events = ToolPolicy.load(), events
+
+    def check(self, name, args):
+        d = self.inner.check(name, args)
+        self.events.append({"type": "guard", "via": "tool policy · tools.json", "checkpoint": "tool_call",
+                            "action": d.action, "input": f"{name}({json.dumps(args)})", "output": None if d.stop else f"{name}({json.dumps(args)})",
+                            "reasons": d.reasons, "ms": 0, "policy": True})
+        return d
+
+
 def traced_model(model, events, label):
     def call(turns):
         t = time.time()
@@ -134,7 +148,11 @@ def run_once(mode, message, cfg):
 
     fw = FRAMEWORKS[cfg.get("framework") or next(iter(FRAMEWORKS))]
     t = time.time()
-    out = fw.run(mode, message, guard, mcp, model)
+    policy = TracePolicy(events) if mode != "unguarded" else None
+    try:
+        out = fw.run(mode, message, guard, mcp, model, policy)
+    except TypeError:          # an adapter written before tool policies existed
+        out = fw.run(mode, message, guard, mcp, model)
     leaked = any("EMAIL SENT" in str(x["output"]) for x in out["tools"])
     tools = [{"type": "tool", **x} for x in out["tools"]]
     return {"mode": mode, "framework": fw.NAME, "answer": out["answer"], "events": _interleave(events, tools), "tools": out["tools"],

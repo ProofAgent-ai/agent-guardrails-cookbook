@@ -12,8 +12,9 @@ from langgraph.types import Command
 REFUSAL = "Sorry, I can't help with that."
 
 
-def make_guard_nodes(guard, agent="agent", tools="tools"):
-    """Return the four guard nodes, bound to a `Guard` (see guards/python/guard.py)."""
+def make_guard_nodes(guard, agent="agent", tools="tools", policy=None):
+    """Return the four guard nodes, bound to a `Guard` (see guards/python/guard.py).
+    `policy` (shared/tool_policy.py) checks tool calls against tools.json before the guardrail does."""
 
     def refuse(replace_id=None):
         # Reusing the id of the last AI message replaces it, so no dangling tool_calls are left.
@@ -33,6 +34,8 @@ def make_guard_nodes(guard, agent="agent", tools="tools"):
     def guard_tool_call(state):
         ai = state["messages"][-1]
         for call in ai.tool_calls:
+            if policy and policy.check(call["name"], call["args"]).stop:      # schema, allowlist, approval
+                return refuse(replace_id=ai.id)
             d = guard.check(f"{call['name']}({call['args']})", "tool_call")
             if d.blocked or d.needs_review:
                 return refuse(replace_id=ai.id)

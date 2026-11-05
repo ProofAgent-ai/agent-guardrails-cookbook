@@ -28,7 +28,7 @@ def fetch_help_page(url: str) -> str:
 
 
 @tool
-def send_email(to: str, body: str) -> str:
+def send_email(to: str, body: str, subject: str = "") -> str:
     """Send an email."""
     return f"EMAIL SENT to {to}: {body}"
 

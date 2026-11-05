@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-labelledby="t d">
+  <title id="t">A fully guarded AI agent</title>
+  <desc id="d">Four guardrail checks around an agent: an API gateway checks user input, and the agent checks its tool calls, tool results and reply over MCP. Safe data flows through; an attack is stopped at the input check.</desc>
+  <style>
+    :root { --bg:#ffffff; --ink:#14171c; --muted:#5d6672; --faint:#9aa3ae; --line:#d9dde3; --panel:#ffffff;
+            --accent:#4f46e5; --api:#b45309; --api-bg:#fef3c7; --mcp:#1d4ed8; --mcp-bg:#dbeafe;
+            --ok:#15803d; --ok-bg:#dcfce7; --bad:#b91c1c; --bad-bg:#fee2e2;
+            --z1:#fff7ed; --z2:#f5f3ff; --z3:#f0fdf4; --z4:#f0fdfa; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0d1117; --ink:#e6edf3; --muted:#9aa4b1; --faint:#6e7681; --line:#30363d; --panel:#161b22;
+              --accent:#818cf8; --api:#fbbf24; --api-bg:#3a2a0b; --mcp:#93c5fd; --mcp-bg:#132544;
+              --ok:#4ade80; --ok-bg:#12311f; --bad:#f87171; --bad-bg:#3b1414;
+              --z1:#1f1810; --z2:#1b1830; --z3:#0f1f15; --z4:#0d1f1d; }
+    }
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill: var(--ink); }
+    .bg { fill: var(--bg); }
+    .title { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+    .subtitle { font-size: 13.5px; fill: var(--muted); }
+    .zone { stroke: var(--line); stroke-width: 1; }
+    .zl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; fill: var(--faint); }
+    .edge { fill: none; stroke: var(--line); stroke-width: 4; stroke-linecap: round; }
+    .flow { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 3 11; opacity: .75;
+            animation: flow 1.1s linear infinite; }
+    @keyframes flow { to { stroke-dashoffset: -28; } }
+    .arrow { fill: var(--faint); }
+    .actor { fill: var(--panel); stroke: var(--line); stroke-width: 2.5; }
+    .shield { stroke-width: 2.5; }
+    .shield.api { fill: var(--api-bg); stroke: var(--api); }
+    .shield.mcp { fill: var(--mcp-bg); stroke: var(--mcp); }
+    .num { font-size: 15px; font-weight: 800; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+    .num.api { fill: var(--api); } .num.mcp { fill: var(--mcp); }
+    .icon { font-size: 24px; text-anchor: middle; dominant-baseline: central; }
+    .nl { font-size: 13.5px; font-weight: 700; text-anchor: middle; }
+    .ns { font-size: 11.5px; fill: var(--muted); text-anchor: middle; }
+    .cap rect { stroke-width: 1.5; }
+    .cap.api rect { fill: var(--api-bg); stroke: var(--api); }
+    .cap.mcp rect { fill: var(--mcp-bg); stroke: var(--mcp); }
+    .cap .ct { font-size: 11.5px; font-weight: 800; }
+    .cap .cs { font-size: 10.5px; fill: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+    .cap.api .ct { fill: var(--api); } .cap.mcp .ct { fill: var(--mcp); }
+    .conn { stroke-width: 2; stroke-dasharray: 3 4; }
+    .conn.api { stroke: var(--api); } .conn.mcp { stroke: var(--mcp); }
+    .badge rect { fill: var(--panel); stroke: var(--line); }
+    .badge text { font-size: 10.5px; fill: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+    .el { font-size: 11px; font-weight: 600; fill: var(--faint); }
+    .safe { fill: var(--ok); } .attack { fill: var(--bad); }
+    .halo-ok { fill: var(--ok); opacity: .25; } .halo-bad { fill: var(--bad); opacity: .25; }
+    .stop { fill: var(--bad); font-size: 26px; font-weight: 900; text-anchor: middle; dominant-baseline: central; }
+    .legend text { font-size: 12px; fill: var(--muted); }
+  </style>
+
+  <rect class="bg" width="1200" height="600" rx="18"/>
+  <text class="title" x="40" y="46">A fully guarded AI agent</text>
+  <text class="subtitle" x="40" y="70">3 checkpoints · 4 checks · nothing reaches the agent, its tools or the user unchecked</text>
+
+  <!-- trust zones -->
+  <rect class="zone" style="fill:var(--z1)" x="30" y="96" width="370" height="226" rx="18"/><text class="zl" x="50" y="120">UNTRUSTED INPUT</text>
+  <rect class="zone" style="fill:var(--z2)" x="470" y="96" width="220" height="226" rx="18"/><text class="zl" x="490" y="120">AGENT</text>
+  <rect class="zone" style="fill:var(--z3)" x="760" y="96" width="410" height="226" rx="18"/><text class="zl" x="1150" y="120" text-anchor="end">BACK TO THE USER</text>
+  <rect class="zone" style="fill:var(--z4)" x="200" y="360" width="800" height="200" rx="18"/><text class="zl" x="980" y="545" text-anchor="end">TOOLS · THE OUTSIDE WORLD</text>
+
+  <!-- edges -->
+  <g>
+    <path id="e1" class="edge" d="M110 230 L310 230"/>
+    <path id="e2" class="edge" d="M310 230 L580 230"/>
+    <path id="e3" class="edge" d="M580 230 L860 230"/>
+    <path id="e4" class="edge" d="M860 230 L1080 230"/>
+    <path id="e5" class="edge" d="M580 230 C510 258 410 320 410 440"/>
+    <path id="e6" class="edge" d="M410 440 L580 440"/>
+    <path id="e7" class="edge" d="M580 440 L750 440"/>
+    <path id="e8" class="edge" d="M750 440 C750 320 650 258 580 230"/>
+    <path class="flow" d="M110 230 L1080 230"/>
+    <path class="flow" d="M580 230 C510 258 410 320 410 440 L750 440 C750 320 650 258 580 230"/>
+    <path class="arrow" transform="translate(210,230)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <path class="arrow" transform="translate(450,230)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <path class="arrow" transform="translate(725,230)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <path class="arrow" transform="translate(975,230)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <path class="arrow" transform="translate(495,440)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <path class="arrow" transform="translate(665,440)" d="M-6,-6 L5,0 L-6,6 Z"/>
+    <text class="el" x="398" y="336" text-anchor="end">tool call</text>
+    <text class="el" x="762" y="336">tool result</text>
+  </g>
+
+  <!-- caps: which guard each checkpoint calls -->
+  <g class="cap api"><line class="conn api" x1="310" y1="186" x2="310" y2="197"/><rect x="236" y="148" width="148" height="38" rx="10"/>
+    <text class="ct" x="250" y="164">◆ Nano API</text><text class="cs" x="250" y="178">gateway · /v1/scan</text></g>
+  <g class="cap mcp"><line class="conn mcp" x1="860" y1="186" x2="860" y2="197"/><rect x="786" y="148" width="148" height="38" rx="10"/>
+    <text class="ct" x="800" y="164">◆ Nano MCP</text><text class="cs" x="800" y="178">check_reply</text></g>
+  <g class="cap mcp"><line class="conn mcp" x1="372" y1="440" x2="382" y2="440"/><rect x="214" y="421" width="158" height="38" rx="10"/>
+    <text class="ct" x="228" y="437">◆ policy + Nano MCP</text><text class="cs" x="228" y="451">check_tool_call</text></g>
+  <g class="cap mcp"><line class="conn mcp" x1="778" y1="440" x2="788" y2="440"/><rect x="788" y="421" width="158" height="38" rx="10"/>
+    <text class="ct" x="802" y="437">◆ Nano MCP</text><text class="cs" x="802" y="451">check_tool_result</text></g>
+
+  <!-- nodes -->
+  <g transform="translate(110,230)"><circle class="actor" r="32"/><text class="icon">👤</text>
+    <text class="nl" y="56">User</text><text class="ns" y="72">anyone, any language</text></g>
+  <g transform="translate(310,230)"><path class="shield api" d="M0,-33 L29,-21 L29,4 C29,21 15,31 0,37 C-15,31 -29,21 -29,4 L-29,-21 Z"/>
+    <text class="num api" y="1">1</text><text class="nl" y="56">Input check</text><text class="ns" y="72">injection · jailbreak · PII</text></g>
+  <g transform="translate(580,230)"><circle class="actor" r="34"/><text class="icon">🤖</text>
+    <text class="nl" y="-50">Agent</text>
+    <g class="badge"><rect x="-70" y="42" width="140" height="20" rx="10"/><text x="0" y="56" text-anchor="middle">skills · tools.json</text></g></g>
+  <g transform="translate(860,230)"><path class="shield mcp" d="M0,-33 L29,-21 L29,4 C29,21 15,31 0,37 C-15,31 -29,21 -29,4 L-29,-21 Z"/>
+    <text class="num mcp" y="1">3</text><text class="nl" y="56">Output check</text><text class="ns" y="72">PII leaks · prompt leaks</text></g>
+  <g transform="translate(1080,230)"><circle class="actor" r="32"/><text class="icon">💬</text>
+    <text class="nl" y="56">Reply</text><text class="ns" y="72">safe, masked</text></g>
+  <g transform="translate(410,440)"><path class="shield mcp" d="M0,-33 L29,-21 L29,4 C29,21 15,31 0,37 C-15,31 -29,21 -29,4 L-29,-21 Z"/>
+    <text class="num mcp" y="1">2a</text><text class="nl" y="58">Tool-call check</text><text class="ns" y="74">before it runs</text></g>
+  <g transform="translate(580,440)"><circle class="actor" r="32"/><text class="icon">🔧</text>
+    <text class="nl" y="58">Tools</text><text class="ns" y="74">email · web · orders</text></g>
+  <g transform="translate(750,440)"><path class="shield mcp" d="M0,-33 L29,-21 L29,4 C29,21 15,31 0,37 C-15,31 -29,21 -29,4 L-29,-21 Z"/>
+    <text class="num mcp" y="1">2b</text><text class="nl" y="58">Tool-result check</text><text class="ns" y="74">indirect injection</text></g>
+
+  <!-- a safe request travels the whole loop -->
+  <g>
+    <circle class="halo-ok" r="12"><animateMotion dur="9s" repeatCount="indefinite" path="M110 230 L310 230 L580 230 C510 258 410 320 410 440 L580 440 L750 440 C750 320 650 258 580 230 L860 230 L1080 230"/></circle>
+    <circle class="safe" r="7"><animateMotion dur="9s" repeatCount="indefinite" path="M110 230 L310 230 L580 230 C510 258 410 320 410 440 L580 440 L750 440 C750 320 650 258 580 230 L860 230 L1080 230"/></circle>
+  </g>
+  <!-- an attack is stopped at the input check -->
+  <g>
+    <circle class="halo-bad" r="12" cx="0" cy="0">
+      <animateMotion dur="4.5s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear" path="M110 230 L284 230"/>
+      <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite" values=".25;.25;0;0" keyTimes="0;0.45;0.5;1"/></circle>
+    <circle class="attack" r="7">
+      <animateMotion dur="4.5s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear" path="M110 230 L284 230"/>
+      <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.45;0.5;1"/></circle>
+    <text class="stop" x="310" y="231" opacity="0">✕
+      <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite" values="0;0;1;1;0" keyTimes="0;0.44;0.5;0.85;1"/></text>
+  </g>
+
+  <!-- legend -->
+  <g class="legend">
+    <rect x="40" y="576" width="12" height="12" rx="3" style="fill:var(--api-bg);stroke:var(--api)"/><text x="58" y="586">API gateway in front of the agent</text>
+    <rect x="290" y="576" width="12" height="12" rx="3" style="fill:var(--mcp-bg);stroke:var(--mcp)"/><text x="308" y="586">MCP checks inside the agent</text>
+    <circle cx="526" cy="582" r="6" class="safe"/><text x="538" y="586">safe request</text>
+    <circle cx="640" cy="582" r="6" class="attack"/><text x="652" y="586">attack, stopped at checkpoint 1</text>
+  </g>
+</svg>

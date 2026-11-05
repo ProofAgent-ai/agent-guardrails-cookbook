@@ -1,0 +1,50 @@
+{
+  "$comment": "The agent's tools: JSON Schema for the arguments plus risk metadata the tool policy enforces at checkpoint 2a. Framework-neutral: every recipe builds its tools from this file.",
+  "allow": {
+    "email_domains": ["example-shop.com"]
+  },
+  "tools": [
+    {
+      "name": "fetch_help_page",
+      "description": "Read a page of the shop's help centre. Use it for questions about shipping, returns or opening hours.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "maxLength": 300, "description": "Page URL or topic, e.g. https://example.com/help/shipping" }
+        },
+        "required": ["url"],
+        "additionalProperties": false
+      },
+      "risk": { "level": "low", "side_effects": "read", "data": "public", "egress": false, "untrusted_output": true }
+    },
+    {
+      "name": "lookup_order",
+      "description": "Look up an order by its id (e.g. A1234) to answer questions about it. Returns the customer record, personal data included.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "order_id": { "type": "string", "pattern": "^[A-Z][0-9]{3,10}$", "description": "Order id, e.g. A1234" }
+        },
+        "required": ["order_id"],
+        "additionalProperties": false
+      },
+      "risk": { "level": "medium", "side_effects": "read", "data": "personal", "egress": false, "untrusted_output": false }
+    },
+    {
+      "name": "send_email",
+      "description": "Send an email. Only to the customer's own address or to the shop's domain.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "to":      { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", "maxLength": 254 },
+          "subject": { "type": "string", "maxLength": 200 },
+          "body":    { "type": "string", "maxLength": 5000 }
+        },
+        "required": ["to", "body"],
+        "additionalProperties": false
+      },
+      "risk": { "level": "high", "side_effects": "external", "data": "personal", "egress": true,
+                "requires_approval": "outside_allowlist", "destination_arg": "to" }
+    }
+  ]
+}

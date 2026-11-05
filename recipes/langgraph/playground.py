@@ -6,7 +6,8 @@ Every framework recipe ships one of these with the same interface:
     run(mode, message, guard, mcp, model) -> {"answer": str, "tools": [{"name", "output"}]}
 
 `guard` is a Guard (API and hybrid), `mcp` has .call(tool, **args) (MCP and hybrid),
-`model` is framework-neutral (shared/models.py: turns -> step). The server passes traced versions.
+`model` is framework-neutral (shared/models.py: turns -> step), `policy` checks tool calls against
+shared/agent/tools.json (shared/tool_policy.py). The server passes traced versions.
 """
 import importlib.util
 import sys
@@ -45,12 +46,12 @@ def _unguarded(model):
     return g.compile()
 
 
-def run(mode, message, guard, mcp, model):
+def run(mode, message, guard, mcp, model, policy=None):
     model = lc_model(model)
     graph = {"unguarded": lambda: _unguarded(model),
-             "api": lambda: _API.build_graph(guard, model),
-             "mcp": lambda: _MCP.build_graph(mcp, model),
-             "hybrid": lambda: _HYBRID.build_graph(guard, mcp, model)}[mode]()
+             "api": lambda: _API.build_graph(guard, model, policy),
+             "mcp": lambda: _MCP.build_graph(mcp, model, policy),
+             "hybrid": lambda: _HYBRID.build_graph(guard, mcp, model, policy)}[mode]()
     messages = graph.invoke({"messages": [HumanMessage(content=message)]})["messages"]
     return {"answer": messages[-1].content,
             "tools": [{"name": m.name, "output": m.content} for m in messages if isinstance(m, ToolMessage)]}

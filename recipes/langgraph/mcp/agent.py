@@ -21,7 +21,7 @@ from mcp_client import get_mcp  # noqa: E402  (shared/mcp_client.py)
 STOP = {"BLOCK", "NEEDS_REVIEW"}
 
 
-def make_guarded_agent(mcp, model=naive_model, check_input=True):
+def make_guarded_agent(mcp, model=naive_model, check_input=True, policy=None):
     """check_input=False when something in front of the agent (an API gateway) already checks user messages."""
     def agent(state: MessagesState):
         messages = list(state["messages"])
@@ -45,6 +45,8 @@ def make_guarded_agent(mcp, model=naive_model, check_input=True):
 
         # Before acting: check every tool call.
         for call in reply.tool_calls:
+            if policy and policy.check(call["name"], call["args"]).stop:      # schema, allowlist, approval
+                return {"messages": rewrites + [AIMessage(content=REFUSAL)]}
             r = mcp.call("check_tool_call", tool=call["name"], arguments=call["args"])
             if r["action"] in STOP:
                 return {"messages": rewrites + [AIMessage(content=REFUSAL)]}
@@ -59,9 +61,9 @@ def make_guarded_agent(mcp, model=naive_model, check_input=True):
     return agent
 
 
-def build_graph(mcp, model=naive_model):
+def build_graph(mcp, model=naive_model, policy=None):
     g = StateGraph(MessagesState)
-    g.add_node("agent", make_guarded_agent(mcp, model))
+    g.add_node("agent", make_guarded_agent(mcp, model, policy=policy))
     g.add_node("tools", ToolNode(TOOLS))
     g.add_edge(START, "agent")
     g.add_conditional_edges("agent", tools_condition, ["tools", END])

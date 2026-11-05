@@ -17,12 +17,12 @@ from langgraph.graph import START, MessagesState, StateGraph  # noqa: E402
 from langgraph.prebuilt import ToolNode  # noqa: E402
 
 
-def build_graph(guard, model=naive_model):
+def build_graph(guard, model=naive_model, policy=None):
     """`model` is any function messages -> AIMessage: the stub, or one from llm.make_model."""
     def agent(state: MessagesState):
         return {"messages": [model(state["messages"])]}
 
-    guard_input, guard_tool_call, guard_tool_result, guard_output = make_guard_nodes(guard)
+    guard_input, guard_tool_call, guard_tool_result, guard_output = make_guard_nodes(guard, policy=policy)
     g = StateGraph(MessagesState)
     g.add_node("guard_input", guard_input, destinations=("agent", "__end__"))
     g.add_node("agent", agent)
