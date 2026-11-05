@@ -165,8 +165,8 @@ del{background:var(--block-bg);color:var(--block);text-decoration:line-through;b
 .gnode.pass .body{stroke-dasharray:5 5;stroke:var(--faint)}
 .gnode.visited .body{stroke:var(--accent)}
 .gnode.ALLOW .body{stroke:var(--allow);fill:var(--allow-bg)} .gnode.ALLOW .num{fill:var(--allow)}
-.gnode.MASK .body{stroke:var(--mask);fill:var(--mask-bg)} .gnode.MASK .num{fill:var(--mask)}
-.gnode.REVIEW .body{stroke:var(--review);fill:var(--review-bg)} .gnode.REVIEW .num{fill:var(--review)}
+.gnode.MASK .body,.gnode.REVIEW .body,.gnode.FLAG .body{stroke:var(--block);stroke-width:2.5;fill:var(--block-bg)}
+.gnode.MASK .num,.gnode.REVIEW .num,.gnode.FLAG .num{fill:var(--block)}
 .gnode.BLOCK .body{stroke:var(--block);fill:var(--block)} .gnode.BLOCK .num{fill:#fff}
 .gnode.danger .body{stroke:var(--block);fill:var(--block-bg)}
 .gnode.sel .body{stroke-width:4;filter:url(#glow)}
@@ -181,9 +181,9 @@ del{background:var(--block-bg);color:var(--block);text-decoration:line-through;b
 .cap .ct{font:700 11px system-ui;fill:var(--ink)}
 .cap .cs{font:10px ui-monospace,monospace;fill:var(--muted)}
 .cap.none rect{stroke-dasharray:4 3;fill:transparent} .cap.none .logo{fill:var(--faint)} .cap.none .ct{fill:var(--faint)}
-.cap.ALLOW rect{stroke:var(--allow);fill:var(--allow-bg)} .cap.MASK rect{stroke:var(--mask);fill:var(--mask-bg)}
-.cap.REVIEW rect{stroke:var(--review);fill:var(--review-bg)} .cap.BLOCK rect{stroke:var(--block);fill:var(--block-bg)}
-.cap.ALLOW .cs{fill:var(--allow)} .cap.MASK .cs{fill:var(--mask)} .cap.REVIEW .cs{fill:var(--review)} .cap.BLOCK .cs{fill:var(--block)}
+.cap.ALLOW rect{stroke:var(--allow);fill:var(--allow-bg)} .cap.ALLOW .cs{fill:var(--allow)}
+.cap.MASK rect,.cap.REVIEW rect,.cap.FLAG rect,.cap.BLOCK rect{stroke:var(--block);fill:var(--block-bg)}
+.cap.MASK .cs,.cap.REVIEW .cs,.cap.FLAG .cs,.cap.BLOCK .cs{fill:var(--block)}
 .cap.firing rect{filter:url(#glow);stroke-width:2.5}
 .cap.firing .conn{stroke:var(--accent);stroke-width:3;animation:flow .5s linear infinite}
 .cap.firing .logo{animation:spin 1s linear infinite;transform-box:fill-box;transform-origin:center}
@@ -205,7 +205,7 @@ del{background:var(--block-bg);color:var(--block);text-decoration:line-through;b
 .ntabs button{border:1px solid transparent;border-bottom:0;background:none;padding:8px 11px;border-radius:8px 8px 0 0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .ntabs button.on{background:var(--panel);border-color:var(--line);color:var(--ink);font-weight:650}
 .ntabs .sd{width:8px;height:8px;border-radius:50%;background:var(--line)}
-.sd.ALLOW{background:var(--allow)} .sd.MASK{background:var(--mask)} .sd.REVIEW{background:var(--review)} .sd.BLOCK{background:var(--block)}
+.sd.ALLOW{background:var(--allow)} .sd.MASK,.sd.REVIEW,.sd.FLAG{background:transparent;border:2px solid var(--block)} .sd.BLOCK{background:var(--block)}
 .sd.visited{background:var(--accent)} .sd.pass{background:transparent;border:1.5px dashed var(--faint)} .sd.danger{background:var(--block)}
 .npanel{padding:16px;background:var(--panel);min-height:180px}
 .npanel h4{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
@@ -550,7 +550,8 @@ function buildSteps(r){
     if (e.type === "guard") {
       const a = norm(e.action), node = e.checkpoint;
       const out = STOP(e.action) ? null : (e.output ?? e.input);
-      go(node, { kind: "guard", e, action: a, in: e.input, out,
+      const raw = (e.nano && e.nano.decision && e.nano.decision.action) || e.nano_decision;
+      go(node, { kind: "guard", e, action: a, flagged: a !== "ALLOW" || (raw && raw !== "PASS" && raw !== "ALLOW"), in: e.input, out,
         text: `${NODES[node].label}: <b>${ACTION_WORD[e.action] || e.action}</b>${a === "MASK" ? " — personal data replaced" : ""}${STOP(e.action) ? " — the run stops here" : ""}` });
       if (STOP(e.action)) stopped = true;
     } else if (e.type === "llm") {
@@ -631,8 +632,8 @@ function renderResults(runs){
       <button id="vNext" title="Next step">▶|</button>
       <select id="vSpeed"><option value="1.6">slow</option><option value="1" selected>normal</option><option value="0.5">fast</option></select></div></div>
     <div class="stage" id="stage">${vizShell()}</div>
-    <div class="legend2"><span><i style="background:var(--allow)"></i>allowed</span><span><i style="background:var(--mask)"></i>masked</span>
-      <span><i style="background:var(--review)"></i>review</span><span><i style="background:var(--block)"></i>blocked</span>
+    <div class="legend2"><span><i style="background:var(--allow)"></i>passed</span><span><i style="border:2px solid var(--block)"></i>found something: masked, flagged or review</span>
+      <span><i style="background:var(--block)"></i>blocked</span>
       <span><i style="border:1.5px dashed var(--faint)"></i>no check</span><span>◆ cap = the guardrail each checkpoint calls</span></div>
     <div class="caption" id="caption"></div>
     <div class="ntabs" id="ntabs">${ORDER.map(k => `<button data-n="${k}"><span class="sd"></span>${NODES[k].cp ? NODES[k].num + " · " : ""}${NODES[k].label}</button>`).join("")}</div>
@@ -715,7 +716,8 @@ function nodeState(k, upto){
   const visits = VIEW.steps.slice(0, upto + 1).filter(s => s.node === k);
   if (!visits.length) return "idle";
   const g = visits.filter(s => s.kind === "guard");
-  if (g.length) { const order = ["ALLOW", "MASK", "REVIEW", "BLOCK"]; return g.map(s => s.action).sort((a, b) => order.indexOf(b) - order.indexOf(a))[0]; }
+  if (g.length) { const order = ["ALLOW", "MASK", "REVIEW", "BLOCK"]; const worst = g.map(s => s.action).sort((a, b) => order.indexOf(b) - order.indexOf(a))[0];
+    return worst === "ALLOW" && g.some(s => s.flagged) ? "FLAG" : worst; }
   if (visits.some(s => s.danger)) return "danger";
   if (visits.every(s => s.kind === "pass")) return "pass";
   return "visited";
@@ -727,6 +729,7 @@ function paint(){
     const g = document.querySelector(`.gnode[data-n="${k}"]`);
     g.setAttribute("class", `gnode ${NODES[k].cp ? "cp" : "actor"} ${st} ${k === sel ? "sel" : ""}`);
     if (NODES[k].cp && st === "BLOCK") g.querySelector(".num").textContent = "✕";
+    else if (NODES[k].cp && ["MASK", "REVIEW", "FLAG"].includes(st)) g.querySelector(".num").textContent = "!";
     else if (NODES[k].cp) g.querySelector(".num").textContent = NODES[k].num;
     const tab = document.querySelector(`#ntabs button[data-n="${k}"]`);
     tab.classList.toggle("on", k === sel); tab.querySelector(".sd").className = "sd " + st;
@@ -737,12 +740,12 @@ function paint(){
   document.querySelectorAll(".flow").forEach(e => e.classList.toggle("done", done.has(e.dataset.f)));
   document.querySelectorAll(".arr").forEach(e => e.classList.toggle("done", done.has(e.dataset.a)));
   document.querySelectorAll(".cap").forEach(c => {
-    const k = c.dataset.c, st = nodeState(k, idx), hit = ["ALLOW", "MASK", "REVIEW", "BLOCK"].includes(st);
+    const k = c.dataset.c, st = nodeState(k, idx), hit = ["ALLOW", "MASK", "REVIEW", "FLAG", "BLOCK"].includes(st);
     const firing = c.classList.contains("firing");
     c.setAttribute("class", `cap ${VIEW.cap && VIEW.cap.none ? "none" : hit ? st : ""} ${firing ? "firing" : ""}`);
     const last = steps.slice(0, idx + 1).filter(s => s.node === k && s.kind === "guard").pop();
     const ms = last && (last.e.ms >= 1000 ? `${(last.e.ms / 1000).toFixed(1)} s` : `${last.e.ms} ms`);
-    c.querySelector(".cs").textContent = last ? `${last.action} · ${ms}` : (c.dataset.sub || "");
+    c.querySelector(".cs").textContent = last ? `${(last.e.nano && last.e.nano.decision && last.e.nano.decision.action) || last.e.nano_decision || last.action} · ${ms}` : (c.dataset.sub || "");
   });
   const refuse = steps[idx] && steps[idx].refuse;
   if (!refuse) $("#refuseEdge").style.display = "none"; else pathFor(steps[idx - 1].node, "reply", true);
