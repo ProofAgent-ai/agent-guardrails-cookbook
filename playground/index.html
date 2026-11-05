@@ -770,23 +770,23 @@ function visitHtml(s, n){
 function nanoHtml(e){
   // The full ProofAgent Nano answer: recommendation, severity, why (risk findings), PII, regulations, obligations.
   const n = e.nano; if (!n) return "";
+  const req = n.request || {}, meta = n.nano || {};
   const d = n.decision || {}, rep = n.report || {}, act = norm(d.action || e.action);
   const reasons = new Set(d.reasons || []);
   const risks = (n.findings || []).filter(f => f.kind === "risk").sort((a, b) => reasons.has(b.id) - reasons.has(a.id) || (b.confidence || 0) - (a.confidence || 0));
   const spans = (n.findings || []).filter(f => f.kind === "span");
   const rules = (n.findings || []).filter(f => f.kind === "rule");
-  const conf = c => c == null ? "" : `<span class="conf">${Math.round(c * 100)}%<span class="bar"><i style="width:${Math.round(c * 100)}%"></i></span></span>`;
+  const conf = (c, f) => c == null ? (f && f.band ? `<span class="conf" title="Regex rules have no confidence score. ProofAgent Nano returns a model score per risk.">${esc(f.band)}</span>` : "") : `<span class="conf">${Math.round(c * 100)}%<span class="bar"><i style="width:${Math.round(c * 100)}%"></i></span></span>`;
   const risk = f => `<div class="find"><span class="b ${norm(f.action) || ""}">${esc(f.action || "")}</span>
       <div>${reasons.has(f.id) ? '<div class="why-tag">reason for the decision</div>' : ""}<div class="t">${esc(f.title || f.risk)}</div>
-      <div class="w">${esc(f.what || "")}${f.risk_family ? ` · <i>${esc(f.risk_family)}</i>` : ""}</div></div>${conf(f.confidence)}</div>`;
+      <div class="w">${esc(f.what || "")}${f.risk_family ? ` · <i>${esc(f.risk_family)}</i>` : ""}</div></div>${conf(f.confidence, f)}</div>`;
   const span = f => `<div class="find"><span class="pill">${esc(f.placeholder || f.subfamily)}</span>
-      <div><div class="t">${esc(f.title || f.subfamily)}</div><div class="w">${esc(f.what_to_do || "")}</div></div>${conf(f.confidence)}</div>`;
+      <div><div class="t">${esc(f.title || f.subfamily)}</div><div class="w">${esc(f.what_to_do || "")}</div></div>${conf(f.confidence, f)}</div>`;
   const rule = f => `<div class="find"><span class="b ${norm(f.action) || ""}">${esc(f.action || "")}</span><div><div class="t">Policy rule ${esc(f.id)}</div><div class="w">${esc(f.reason || "")}</div></div><span></span></div>`;
   const regs = n.regulations || [];
   const obl = rep.obligations || (n.obligations || []).map(o => `${o.id}: ${o.duty}`);
-  const req = n.request || {}, meta = n.nano || {};
   return `<div class="nano">
-    <div class="nh"><b>ProofAgent Nano</b><span class="b ${act}">${esc(d.action || e.action)}</span>
+    <div class="nh"><b>${esc(meta.engine || "ProofAgent Nano")}</b><span class="b ${act}">${esc(d.action || e.action)}</span>
       ${d.severity ? `<span class="sev ${esc(d.severity)}">${esc(d.severity)} severity</span>` : ""}
       ${e.nano_decision && e.nano_decision !== d.action ? `<span class="hint" style="margin:0">MCP: ${esc(e.action)} (Nano ${esc(e.nano_decision)})</span>` : ""}
       <span style="margin-left:auto;color:var(--muted)">${esc(rep.headline || "")}</span></div>
@@ -794,6 +794,7 @@ function nanoHtml(e){
     ${risks.length ? `<div class="nsec"><h5>Why · ${risks.length} risk${risks.length > 1 ? "s" : ""} detected</h5>${risks.map(risk).join("")}</div>` : ""}
     ${rules.length ? `<div class="nsec"><h5>Your policy</h5>${rules.map(rule).join("")}</div>` : ""}
     ${spans.length ? `<div class="nsec"><h5>Personal data · ${spans.length} found and masked</h5>${spans.map(span).join("")}</div>` : ""}
+    ${meta.engine && /local/i.test(meta.engine) ? `<div class="hint" style="margin:8px 12px">Offline regex stand-in: it names the risk class and the PII, but has no confidence scores. Choose <b>ProofAgent Nano</b> as the guard for real model scores per risk.</div>` : ""}
     ${regs.length ? `<div class="nsec"><h5>Regulations that apply</h5>${regs.map(r => `<div class="regrow"><div><b>⚖️ ${esc(r.framework)}</b> <span class="cite">${esc(r.cite || "")}</span></div><div class="w">${esc(r.meaning || "")}</div></div>`).join("")}</div>` : ""}
     ${obl && obl.length ? `<div class="nsec"><h5>Obligations</h5>${obl.map(o => `<div class="w" style="font-size:12.5px;margin-bottom:4px">• ${esc(o)}</div>`).join("")}</div>` : ""}
     <div class="nmeta">${[req.mode, req.direction, req.destination && "→ " + req.destination, meta.language && "lang " + meta.language,

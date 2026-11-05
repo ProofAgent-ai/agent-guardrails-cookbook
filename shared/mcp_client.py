@@ -62,7 +62,7 @@ class LocalMCP:
         d = self.guard.check(text, self._CHECKPOINT[name])
         use_this = arguments.get("arguments") if name == "check_tool_call" else d.text
         return {"action": self._MAP[d.action], "use_this": None if d.blocked else use_this,
-                "reason": "; ".join(d.reasons)}
+                "reason": "; ".join(d.reasons), "result": d.raw}
 
 
 def get_mcp(name=None):
