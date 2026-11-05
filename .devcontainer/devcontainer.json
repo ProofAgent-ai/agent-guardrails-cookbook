@@ -1,0 +1,15 @@
+{
+  "name": "Agent Guardrails Playground",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install --user -r requirements.txt",
+  "postStartCommand": "nohup python playground/server.py > /tmp/playground.log 2>&1 &",
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": { "label": "Guardrails Playground", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["playground/README.md"] },
+    "vscode": { "extensions": ["ms-python.python"] }
+  },
+  "hostRequirements": { "cpus": 2 }
+}

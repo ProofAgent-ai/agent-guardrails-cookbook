@@ -1,0 +1,2 @@
+# Everything the playground and the recipes need. Each recipe also pins its own versions.
+-r recipes/langgraph/requirements.txt
