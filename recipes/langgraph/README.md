@@ -225,7 +225,7 @@ langgraph/
 ├── README.md
 ├── requirements.txt       langgraph 0.6.11, langchain-core 0.3.86
 ├── common.py              tools, stub model, scenarios
-├── attack_demo.py         unguarded vs A vs B, side by side
+├── attack_demo.py         every scenario × unguarded, A, B, C (exit 1 on any failure)
 ├── api/
 │   ├── guard_nodes.py     ← copy into your project
 │   └── agent.py

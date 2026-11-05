@@ -1,0 +1,341 @@
+{
+  "name": "Guarded tool (agent-guardrails-cookbook)",
+  "nodes": [
+    {
+      "id": "61076f42-4faa-4871-992f-1280735ab9b9",
+      "name": "Tool call from agent",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "tool"
+            },
+            {
+              "name": "arguments"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2daa5a52-b28d-4fc2-8f4e-6833e7ce9a5d",
+      "name": "Tool policy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Tool policy (checkpoint 2a, layer 1): the same rules as shared/agent/tools.json, before the guardrail.\nconst TOOLS = ['fetch_help_page', 'lookup_order', 'send_email'];\nconst EMAIL_DOMAINS = ['example-shop.com'];\nconst out = [];\nfor (const item of $input.all()) {\n  const t = item.json.tool;\n  let args = {}, policy = 'ALLOW', reason = '';\n  try { args = JSON.parse(item.json.arguments || '{}'); } catch (e) { policy = 'BLOCK'; reason = 'arguments are not valid JSON'; }\n  if (policy === 'ALLOW' && !TOOLS.includes(t)) { policy = 'BLOCK'; reason = 'unknown tool ' + t; }\n  if (policy === 'ALLOW' && t === 'lookup_order' && !/^[A-Z][0-9]{3,10}$/.test(String(args.order_id || ''))) {\n    policy = 'BLOCK'; reason = 'invalid order_id';\n  }\n  if (policy === 'ALLOW' && t === 'send_email') {\n    const to = String(args.to || '');\n    if (/^\\[[A-Z_]+(:[A-Z_]+)?#\\d+\\]$/.test(to)) { policy = 'REVIEW'; reason = 'destination is masked personal data: needs approval'; }\n    else if (!EMAIL_DOMAINS.includes(to.split('@').pop().toLowerCase())) { policy = 'REVIEW'; reason = 'email to ' + to + ' leaves the allowlist: needs approval'; }\n  }\n  out.push({ json: { ...item.json, policy, reason } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "0f0e0942-7a13-464b-8d00-cce1e6bb9b15",
+      "name": "Policy allows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "30ff0a43-56fa-4490-887d-ecfeee21f9b2",
+              "leftValue": "={{ $json.policy }}",
+              "rightValue": "ALLOW",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3b71abac-f57d-4963-85dd-4980080d6ae7",
+      "name": "2a · Tool-call check (Nano API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "ProofAgent Nano"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://nano.proofagent.ai/v1/scan",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Tool call from agent').item.json.tool + '(' + $('Tool call from agent').item.json.arguments + ')', direction: 'output', destination: 'external_tool' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "70b4e4ec-ce6b-40d9-bab7-3036ffef6758",
+      "name": "Blocked before running?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "3f6e5315-0ccb-4688-b4c2-a81591fee4f8",
+              "leftValue": "={{ $json.decision.action }}",
+              "rightValue": "BLOCK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "b5d019ad-5f08-49e9-92b3-418450eb5668",
+              "leftValue": "={{ $json.decision.action }}",
+              "rightValue": "REVIEW",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "712b15b4-f379-4220-b234-9054d08f282b",
+              "leftValue": "={{ $json.decision.action }}",
+              "rightValue": "GUARDIAN_ALERT",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "41b2856e-7c65-47b0-a601-81dafce0bc67",
+      "name": "Tool denied",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        160
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e74e4845-0cee-453a-b89f-65d0fd8cd658",
+              "name": "response",
+              "type": "string",
+              "value": "={{ 'Blocked by guardrail: ' + ($json.reason || 'this action is not allowed.') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "da8e4636-dd42-49e9-99d5-36015e67fe5a",
+      "name": "Run the tool",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://your-api.example-shop.com/tools/{{ $('Tool call from agent').item.json.tool }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Tool call from agent').item.json.arguments }}",
+        "options": {}
+      },
+      "notes": "Replace with your real tool (HTTP Request, Gmail, Postgres…). Its output goes through check 2b before the agent reads it."
+    },
+    {
+      "id": "3a882186-d40d-4acf-826b-8ae85acb71aa",
+      "name": "2b · Tool-result check (Nano API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        420
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "ProofAgent Nano"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://nano.proofagent.ai/v1/scan",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: typeof $json.data === 'string' ? $json.data : JSON.stringify($json), direction: 'tool' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "60cf8d80-ccac-46ac-a228-3f7c4201d4d8",
+      "name": "Clean result for the agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        420
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce831e75-a971-4aef-ae84-a91f8f78babc",
+              "name": "response",
+              "type": "string",
+              "value": "={{ $json.decision.action === 'BLOCK' ? \"[content withheld by guardrail]\" : $json.text.masked }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Tool call from agent": {
+      "main": [
+        [
+          {
+            "node": "Tool policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2a · Tool-call check (Nano API)": {
+      "main": [
+        [
+          {
+            "node": "Blocked before running?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blocked before running?": {
+      "main": [
+        [
+          {
+            "node": "Tool denied",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run the tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run the tool": {
+      "main": [
+        [
+          {
+            "node": "2b · Tool-result check (Nano API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2b · Tool-result check (Nano API)": {
+      "main": [
+        [
+          {
+            "node": "Clean result for the agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool policy": {
+      "main": [
+        [
+          {
+            "node": "Policy allows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Policy allows?": {
+      "main": [
+        [
+          {
+            "node": "2a · Tool-call check (Nano API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tool denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

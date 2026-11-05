@@ -24,7 +24,7 @@ def main():
     ap.add_argument("--guard", default="local", choices=["local", "nano"])
     ap.add_argument("--llm", default="stub", help="stub, lmstudio, ollama, openai, anthropic")
     ap.add_argument("--model", default=None)
-    ap.add_argument("--framework", default=next(iter(server.FRAMEWORKS)))
+    ap.add_argument("--framework", default="all", help="a recipe folder name, or all")
     a = ap.parse_args()
     if a.guard == "nano" and not os.environ.get("PROOFAGENT_NANO_API_KEY"):
         sys.exit("Set PROOFAGENT_NANO_API_KEY to record with Nano.")
@@ -32,8 +32,9 @@ def main():
     cfg = {"guard": a.guard, "framework": a.framework,
            "nano_key": os.environ.get("PROOFAGENT_NANO_API_KEY"), "nano_url": os.environ.get("PROOFAGENT_NANO_URL"),
            "llm": {"provider": a.llm, "model": a.model, "api_key": os.environ.get("LLM_API_KEY")}}
-    r = server.record_all(cfg)
-    print(f"Saved {r['scenarios']} scenarios ({r['runs']} runs, {r['errors']} errors) → {r['file']}")
+    for key in (server.FRAMEWORKS if a.framework == "all" else [a.framework]):
+        r = server.record_all({**cfg, "framework": key})
+        print(f"Saved {r['scenarios']} scenarios ({r['runs']} runs, {r['errors']} errors) → {r['file']}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,2 @@
+claude-agent-sdk==0.2.178
+# tested 2026-11-05 on Python 3.12. --live also needs the Claude Code CLI, signed in.

@@ -18,7 +18,8 @@ SKIP = {".venv", ".git", "node_modules", "__pycache__", "_site"}
 
 def repo_files(*suffixes):
     return sorted(str(p.relative_to(ROOT)) for p in ROOT.rglob("*")
-                  if p.suffix in suffixes and p.is_file() and not SKIP & set(p.parts))
+                  if p.suffix in suffixes and p.is_file() and not SKIP & set(p.parts)
+                  and not any(part.startswith(".venv") for part in p.parts))
 
 
 def frameworks():
@@ -51,7 +52,7 @@ def main():
     site = {
         "frameworks": fws,
         "planned": sorted(p.name for p in (ROOT / "recipes").iterdir()
-                          if p.is_dir() and p.name not in ready and not p.name.startswith(("_", "00-"))),
+                          if p.is_dir() and p.name not in ready and "🚧 **Planned.**" in (p / "README.md").read_text()),
         "files": md, "code": code,
         "contents": {f: (ROOT / f).read_text() for f in md + code},
         "recordings": recordings,

@@ -46,7 +46,7 @@ def discover_frameworks():
 
 FRAMEWORKS = discover_frameworks()
 PLANNED = sorted(p.name for p in (ROOT / "recipes").iterdir()
-                 if p.is_dir() and p.name not in FRAMEWORKS and not p.name.startswith(("_", "00-")))
+                 if p.is_dir() and p.name not in FRAMEWORKS and "🚧 **Planned.**" in (p / "README.md").read_text())
 
 MCP_CHECKPOINT = {"check_user_message": "input", "check_tool_call": "tool_call",
                   "check_tool_result": "tool_result", "check_reply": "output"}
@@ -162,9 +162,12 @@ def run_once(mode, message, cfg):
 def _interleave(events, tools):
     """Place each tool execution right after the model step that asked for it."""
     out, queue = [], list(tools)
-    for e in events:
+    is_call = lambda x: x["type"] == "guard" and x["checkpoint"] == "tool_call"
+    for i, e in enumerate(events):
         out.append(e)
-        if e["type"] == "guard" and e["checkpoint"] == "tool_call" and e["action"] in ("ALLOW", "MASK", "ALLOW_MASKED") and queue:
+        nxt = events[i + 1] if i + 1 < len(events) else None
+        # After the last 2a check of a call (tool policy, then the guardrail), if it allowed the tool.
+        if is_call(e) and e["action"] in ("ALLOW", "MASK", "ALLOW_MASKED") and queue and not (nxt and is_call(nxt)):
             out.append(queue.pop(0))
     if queue:  # unguarded runs have no tool_call guard: attach after the model step
         merged, q = [], list(queue)
@@ -195,7 +198,8 @@ def scenarios():
 def record_all(cfg, log=print):
     """Run every scenario through every integration and save playground/recordings/<guard>.json.
     The key in cfg is used for the calls and never written to the file."""
-    fw = FRAMEWORKS[cfg.get("framework") or next(iter(FRAMEWORKS))]
+    key = cfg.get("framework") or next(iter(FRAMEWORKS))
+    fw = FRAMEWORKS[key]
     runs, errors = [], 0
     for sc in scenarios():
         results = []
@@ -210,7 +214,7 @@ def record_all(cfg, log=print):
     guard = cfg.get("guard") or "local"
     meta = {"guard": guard, "framework": fw.NAME, "recorded": time.strftime("%Y-%m-%d"),
             "llm": "stub" if llm.get("provider", "stub") == "stub" else f"{llm.get('provider')} · {llm.get('model')}"}
-    out = ROOT / "playground" / "recordings" / f"{guard}.json"
+    out = ROOT / "playground" / "recordings" / f"{key}.{guard}.json"
     out.parent.mkdir(exist_ok=True)
     text = json.dumps({"meta": meta, "runs": runs}, ensure_ascii=False, indent=1)
     if cfg.get("nano_key") and cfg["nano_key"] in text:   # belt and braces: a key must never reach a recording
@@ -292,7 +296,8 @@ def test_llm(llm):
 def repo_files(*suffixes):
     skip = {".venv", ".git", "node_modules", "__pycache__"}
     return sorted(str(p.relative_to(ROOT)) for p in ROOT.rglob("*")
-                  if p.suffix in suffixes and p.is_file() and not skip & set(p.parts))
+                  if p.suffix in suffixes and p.is_file() and not skip & set(p.parts)
+                  and not any(part.startswith(".venv") for part in p.parts))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -329,7 +334,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"path": q.get("path"), "content": p.read_text()})
             if u.path == "/api/source":
                 p = (ROOT / q.get("path", "")).resolve()
-                if ROOT not in p.parents or p.suffix not in (".py", ".jsonl", ".json", ".txt") or ".venv" in p.parts:
+                if ROOT not in p.parents or p.suffix not in (".py", ".jsonl", ".json", ".txt") or any(x.startswith(".venv") for x in p.parts):
                     return self._send(403, {"error": "not allowed"})
                 return self._send(200, {"path": q.get("path"), "content": p.read_text()})
             self._send(404, {"error": "not found"})

@@ -21,8 +21,10 @@
                            detail: "Connection tests need the live playground: use “Run it live”." }] });
       case "run": {
         // Prefer the chosen guard's recording; fall back to the other one for scenarios it doesn't have yet.
+        // Recordings are "<framework>.<guard>". Prefer the chosen pair; fall back to the other guard for that framework.
         const find = rec => rec && rec.runs.find(r => r.message.trim() === String(body.message || "").trim());
-        const run = find(d.recordings[body.guard]) || find(d.recordings.local) || find(d.recordings.nano);
+        const fw = body.framework || "langgraph";
+        const run = find(d.recordings[`${fw}.${body.guard}`]) || find(d.recordings[`${fw}.local`]) || find(d.recordings[`${fw}.nano`]);
         if (!run) return json({ error: "This demo replays recorded runs. Pick one of the scenarios above, "
                                      + "or type your own message in the live playground: " + d.codespaces });
         const results = body.mode === "compare" ? run.results : run.results.filter(r => r.mode === body.mode);
@@ -44,15 +46,16 @@
       .demo-bar a{margin-left:auto;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:650;padding:8px 14px;border-radius:8px;font-size:13px}
       .demo-note{font-size:12px;color:var(--muted);margin-top:4px}`;
     document.head.appendChild(css);
-    const guards = Object.entries(d.recordings).map(([k, r]) => `${k === "nano" ? "ProofAgent Nano" : "local rules"} + ${r.meta.llm}`).join(" · ");
+    const fws = [...new Set(Object.values(d.recordings).map(r => r.meta.framework))];
+    const guards = `${fws.length} frameworks` + (Object.keys(d.recordings).some(k => k.endsWith(".nano")) ? ", including live ProofAgent Nano runs" : "");
     const bar = document.createElement("div");
     bar.className = "demo-bar";
     bar.innerHTML = `<b>▶ Replay demo</b><span>Real runs recorded on ${Object.values(d.recordings)[0].meta.recorded} (${guards}). Pick a scenario and press Run.</span>
       <a href="${d.codespaces}" target="_blank" rel="noopener">Run it live with your own key →</a>`;
     document.querySelector("#tab-play").prepend(bar);
     const llm = document.querySelector("#llmDot")?.closest(".card");
-    if (llm) llm.insertAdjacentHTML("beforeend", `<div class="demo-note">Recorded with: ${Object.values(d.recordings).map(r => r.meta.llm).join(", ")}. Pick any LLM in the live playground.</div>`);
-    if (!d.recordings.nano) {
+    if (llm) llm.insertAdjacentHTML("beforeend", `<div class="demo-note">Recorded with: ${[...new Set(Object.values(d.recordings).map(r => r.meta.llm))].join(", ")}. Pick any LLM in the live playground.</div>`);
+    if (!Object.keys(d.recordings).some(k => k.endsWith(".nano"))) {
       const g = document.querySelector('#guard [data-v="nano"]');
       if (g) { g.disabled = true; g.title = "Nano recordings not published yet"; }
       document.querySelector('#guard [data-v="local"]')?.click();

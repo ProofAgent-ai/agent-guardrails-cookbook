@@ -1,2 +1,5 @@
-# Everything the playground and the recipes need. Each recipe also pins its own versions.
+# Everything the playground and every recipe need (Python 3.10+). Each recipe also pins its own versions.
 -r recipes/langgraph/requirements.txt
+-r recipes/openai-agents/requirements.txt
+-r recipes/crewai/requirements.txt
+-r recipes/claude-agent-sdk/requirements.txt

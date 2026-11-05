@@ -1,0 +1,2 @@
+crewai==1.6.1
+# tested 2026-11-05 on Python 3.12

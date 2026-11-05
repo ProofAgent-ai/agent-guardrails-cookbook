@@ -146,24 +146,40 @@ python3 recipes/00-plain-python/agent.py --guard nano
 
 ## Recipes
 
-| Framework | API | MCP | Hybrid | Status |
-|---|:-:|:-:|:-:|---|
-| [Plain Python (reference)](recipes/00-plain-python) | ✅ | — | — | Ready |
-| [LangGraph](recipes/langgraph) | ✅ | ✅ | ✅ | Ready |
-| [OpenAI Agents SDK](recipes/openai-agents) | 🚧 | 🚧 | 🚧 | Planned |
-| [Claude Agent SDK](recipes/claude-agent-sdk) | 🚧 | 🚧 | 🚧 | Planned |
-| [CrewAI](recipes/crewai) | 🚧 | 🚧 | 🚧 | Planned |
-| [n8n](recipes/n8n) | 🚧 | 🚧 | 🚧 | Planned |
-| **Your framework** | | | | [Add a recipe →](CONTRIBUTING.md) |
+Every framework, the same three checkpoints, using each framework's **own** hooks:
 
-Every recipe has the same layout: a README with diagrams, the integrations, an attack demo showing the agent **unguarded and guarded**, and a `playground.py` adapter so it runs in the playground.
+| Framework | 2a · tool call | 2b · tool result | API | MCP | Hybrid | Tests |
+|---|---|---|:-:|:-:|:-:|---|
+| [Plain Python (reference)](recipes/00-plain-python) | in the loop | in the loop | ✅ | — | — | runs offline |
+| [LangGraph](recipes/langgraph) | guard node / agent node | guard node / agent node | ✅ | ✅ | ✅ | 9 attacks × 4 modes |
+| [OpenAI Agents SDK](recipes/openai-agents) | `tool_input_guardrail` | `tool_output_guardrail` | ✅ | ✅ | ✅ | 9 attacks × 4 modes |
+| [CrewAI](recipes/crewai) | `before_tool_call` | `after_tool_call` | ✅ | ✅ | ✅ | 9 attacks × 4 modes |
+| [Claude Agent SDK](recipes/claude-agent-sdk) | `PreToolUse` | `PostToolUse` | ✅ | ✅ | ✅ | 14 hook tests + 9 attacks × 4 modes |
+| [n8n](recipes/n8n) | guarded-tool sub-workflow | guarded-tool sub-workflow | ✅ | — | — | structure + 9 attacks (real JS) |
+| **Your framework** | | | | | | [Add a recipe →](CONTRIBUTING.md) |
+
+Each recipe has a README with diagrams, the guard code to copy into your project, an attack demo that shows the agent **unguarded and guarded**, and a `playground.py` adapter so it runs in the playground.
+
+### Run every test
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt     # Python 3.10+
+.venv/bin/python tests/test_corpus.py                                    # guard vs the attack corpus
+.venv/bin/python recipes/langgraph/attack_demo.py
+.venv/bin/python recipes/openai-agents/attack_demo.py
+.venv/bin/python recipes/crewai/attack_demo.py
+.venv/bin/python recipes/claude-agent-sdk/test_hooks.py && .venv/bin/python recipes/claude-agent-sdk/attack_demo.py
+python3 recipes/n8n/test_workflow.py
+```
+
+Everything runs **offline**: a local OpenAI-compatible gateway ([`shared/model_gateway.py`](shared/model_gateway.py)) serves a stub model that obeys any instruction it reads (the worst case), so the results are the same on every run. Add `--guard nano` to test with ProofAgent Nano, or point the recipes at a real model.
 
 ## Playground
 
 One local server that runs every recipe end to end with any guard and any LLM, including local models, and **animates every checkpoint** as data flows through the agent.
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt     # Python 3.10+
 .venv/bin/python playground/server.py      # → http://127.0.0.1:8765
 ```
 
