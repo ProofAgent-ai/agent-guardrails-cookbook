@@ -152,8 +152,8 @@ _NANO_ACTION = {"PASS": "ALLOW", "FLAG": "ALLOW", "MASK": "MASK", "SANITISE": "M
                 "REVIEW": "REVIEW", "GUARDIAN_ALERT": "REVIEW", "BLOCK": "BLOCK"}
 
 
-def post_json(req, timeout, retries=2):
-    """POST and parse JSON. On 429 (rate limit), wait as Nano asks (Retry-After, at most 5 s) and try again."""
+def post_json(req, timeout, retries=4):
+    """POST and parse JSON. On 429 (rate limit), wait as Nano asks (Retry-After, at most 20 s) and try again."""
     import time
     for attempt in range(retries + 1):
         try:
@@ -162,7 +162,7 @@ def post_json(req, timeout, retries=2):
         except urllib.error.HTTPError as e:
             if e.code != 429 or attempt == retries:
                 raise
-            time.sleep(min(float(e.headers.get("Retry-After") or 1 + attempt), 5))
+            time.sleep(min(float(e.headers.get("Retry-After") or 2 ** attempt), 20))
 
 
 def _load_dotenv():

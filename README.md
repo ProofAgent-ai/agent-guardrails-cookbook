@@ -42,9 +42,9 @@ Most agents in production have all three. One sentence hidden in a web page (*"i
 
 ## ▶ Try the demo first
 
-<a href="https://proofagent-ai.github.io/agent-guardrails-cookbook/"><img src="docs/assets/playground.gif" alt="The playground replaying real ProofAgent Nano runs: a hidden instruction in a tool result is cleaned at the tool-result check, personal data is masked at the input check, and an Arabic prompt injection is blocked at the input check." width="100%"></a>
+<a href="https://proofagent-ai.github.io/agent-guardrails-cookbook/"><img src="docs/assets/playground.gif" alt="The playground replaying real ProofAgent Nano runs: a hidden instruction in a tool result is cleaned at the tool-result check and the reply is blocked, personal data is masked at the input check, and an Arabic prompt injection is blocked at the input check." width="100%"></a>
 
-<sub>Real runs with ProofAgent Nano: a hidden instruction in a tool result is cleaned (2b), personal data is masked (1), an Arabic prompt injection is blocked (1). Red means the guardrail found something.</sub>
+<sub>Real runs with ProofAgent Nano: a hidden instruction in a web page is cleaned at the tool result (2b) and the reply is blocked (3); personal data is masked (1); an Arabic prompt injection is blocked (1). Red means the guardrail found something.</sub>
 
 <table>
 <tr>
