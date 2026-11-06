@@ -154,9 +154,9 @@ def run_once(mode, message, cfg):
     use_nano = cfg.get("guard") == "nano"
     key, url = cfg.get("nano_key") or None, cfg.get("nano_url") or None
     guard = TraceGuard(NanoGuard(api_key=key, url=url) if use_nano else LocalGuard(), events,
-                       "Nano API /v1/scan" if use_nano else "local rules") if mode in ("api", "hybrid") else None
+                       "ProofAgent Guardrail · API /v1/scan" if use_nano else "ProofAgent Guardrail · offline demo rules") if mode in ("api", "hybrid") else None
     mcp = TraceMCP(NanoMCP(url=url, api_key=key) if use_nano else LocalMCP(), events,
-                   "Nano MCP" if use_nano else "local MCP stand-in") if mode in ("mcp", "hybrid") else None
+                   "ProofAgent Guardrail · MCP" if use_nano else "ProofAgent Guardrail · offline demo rules") if mode in ("mcp", "hybrid") else None
 
     fw = FRAMEWORKS[cfg.get("framework") or next(iter(FRAMEWORKS))]
     t = time.time()

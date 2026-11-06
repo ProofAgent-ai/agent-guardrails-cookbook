@@ -270,7 +270,7 @@ del{background:var(--block-bg);color:var(--block);text-decoration:line-through;b
       <div class="card">
         <h2><span class="dot" id="nanoDot"></span>Guardrail</h2>
         <div class="seg" id="guard">
-          <button data-v="local" class="on">Local rules</button>
+          <button data-v="local" class="on">Offline demo</button>
           <button data-v="nano">ProofAgent Nano</button>
         </div>
         <a class="signup" href="https://app.proofagent.ai" target="_blank" rel="noopener">
@@ -570,7 +570,7 @@ function buildSteps(r){
 
 let RUNS = [], CUR = 0, VIEW = null;   // VIEW: {steps, idx, sel, timer}
 
-const CAP_W = 136, CAP_H = 38;
+const CAP_W = 172, CAP_H = 38;
 function capPos(n){
   if (n.capSide === "left") return { x: n.x - 44 - CAP_W, y: n.y - CAP_H / 2 };
   if (n.capSide === "right") return { x: n.x + 44, y: n.y - CAP_H / 2 };
@@ -768,7 +768,7 @@ function visitHtml(s, n){
     <div class="iogrid"><div><div class="k">in</div><div class="v">${d ? d.before : esc(e.input)}</div></div>
     <div><div class="k">out</div><div class="v">${STOP(e.action) ? '<span class="na">nothing passes — stopped</span>' : d ? d.after : esc(e.output ?? e.input) + ' <span class="na">(unchanged)</span>'}</div></div></div>
     ${!e.nano && /guard unavailable/.test(text || "") ? `<div class="reco BLOCK" style="margin:10px 12px"><div class="k">The guardrail did not answer</div>${/429/.test(text) ? "ProofAgent Nano returned <b>429 Too Many Requests</b>: too many calls in a short time." : esc(text)} With no decision, the guardrail <b>fails closed</b>: it blocks the step rather than let unchecked data through. Wait a few seconds and run again to see Nano's full result.</div>` : ""}
-    ${!e.nano && /guard unavailable/.test(text || "") ? "" : e.nano ? nanoHtml(e) : /local/i.test(e.via || "") ? localHtml(e, e.checkpoint) : text || regs.length ? `<div class="why">${esc(text)}${regs.length ? `<div class="regs">${regs.map(x => `<span class="reg">⚖️ ${esc(x)}</span>`).join("")}</div>` : ""}</div>` : ""}</div>`;
+    ${!e.nano && /guard unavailable/.test(text || "") ? "" : e.nano ? nanoHtml(e) : /local|offline/i.test(e.via || "") ? localHtml(e, e.checkpoint) : text || regs.length ? `<div class="why">${esc(text)}${regs.length ? `<div class="regs">${regs.map(x => `<span class="reg">⚖️ ${esc(x)}</span>`).join("")}</div>` : ""}</div>` : ""}</div>`;
 }
 
 // Local rules carry no model scores, so the card shows what the rule means: decision, AI-risk category and family, and masked personal data.
@@ -846,8 +846,8 @@ function renderReference(){
   $("#vmeta").textContent = "Click any node. Run a message to watch the data move through it.";
   document.querySelector(".ctrl").style.visibility = "hidden";
   VIEW = { steps: [{ node: "user", kind: "doc" }], idx: 0, sel: "input" };
-  setCaps({ per: { input: { label: "Nano API", sub: "gateway" }, tool_call: { label: "Nano MCP", sub: "check_tool_call" },
-             tool_result: { label: "Nano MCP", sub: "check_tool_result" }, output: { label: "Nano MCP", sub: "check_reply" } } });
+  setCaps({ per: { input: { label: "ProofAgent Guardrail", sub: "API gateway" }, tool_call: { label: "ProofAgent Guardrail", sub: "MCP · check_tool_call" },
+             tool_result: { label: "ProofAgent Guardrail", sub: "MCP · check_tool_result" }, output: { label: "ProofAgent Guardrail", sub: "MCP · check_reply" } } });
   document.querySelectorAll(".cap").forEach(c => c.setAttribute("class", "cap"));
   ORDER.forEach(k => document.querySelector(`.gnode[data-n="${k}"]`).setAttribute("class", `gnode ${NODES[k].cp ? "cp" : "actor"} ${k === "input" ? "sel" : ""}`));
   const show = k => { VIEW.sel = k;
@@ -885,8 +885,8 @@ $("#go").onclick = async () => {
     const r = await post("/api/run", cfg);
     if (r.error) throw new Error(r.error);
     const nano = cfg.guard === "nano";
-    const API = nano ? { label: "Nano API", sub: "POST /v1/scan" } : { label: "Local rules", sub: "offline regex" };
-    const MCP = nano ? { label: "Nano MCP", sub: "called by agent" } : { label: "Local MCP", sub: "offline stand-in" };
+    const API = nano ? { label: "ProofAgent Guardrail", sub: "API · /v1/scan" } : { label: "ProofAgent Guardrail", sub: "offline demo rules" };
+    const MCP = nano ? { label: "ProofAgent Guardrail", sub: "MCP · called by agent" } : { label: "ProofAgent Guardrail", sub: "offline demo rules" };
     const capFor = mode => mode === "unguarded" ? { label: "No guard", sub: "unchecked", none: true }
       : mode === "mcp" ? MCP : mode === "hybrid" ? { per: { input: API, tool_call: MCP, tool_result: MCP, output: MCP } } : API;
     renderResults(r.results.map(x => ({ ...x, message: cfg.message, cap: capFor(x.mode) })));
@@ -899,7 +899,7 @@ $("#recordBtn").onclick = async () => {
   const cfg = { guard: guardV(), framework: $("#framework").value, nano_key: $("#nanoKey").value, nano_url: $("#nanoUrl").value, llm: llmCfg() };
   if (cfg.guard === "nano" && !cfg.nano_key) { $("#status").textContent = "Add your Nano API key first."; return; }
   const n = document.querySelectorAll(".chip").length;
-  if (!confirm(`Record ${n} scenarios × every integration with ${cfg.guard === "nano" ? "ProofAgent Nano" : "local rules"} and ${cfg.llm.provider === "stub" ? "the stub model" : cfg.llm.model}?\n\nThis replaces the ${cfg.guard} recording used by the GitHub Pages demo${cfg.guard === "nano" ? " and uses about " + n * 4 + " Nano calls" : ""}.`)) return;
+  if (!confirm(`Record ${n} scenarios × every integration with ${cfg.guard === "nano" ? "ProofAgent Nano" : "offline demo rules"} and ${cfg.llm.provider === "stub" ? "the stub model" : cfg.llm.model}?\n\nThis replaces the ${cfg.guard} recording used by the GitHub Pages demo${cfg.guard === "nano" ? " and uses about " + n * 4 + " Nano calls" : ""}.`)) return;
   const btn = $("#recordBtn"); btn.disabled = true; btn.textContent = "⏺ Recording…";
   $("#status").textContent = cfg.llm.provider === "stub" ? "Recording…" : "Recording… a local model takes a few minutes.";
   try {

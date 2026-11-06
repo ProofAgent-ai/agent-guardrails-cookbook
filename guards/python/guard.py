@@ -139,8 +139,8 @@ class LocalGuard(Guard):
             "findings": risks + spans,
             "regulations": [{"framework": f, "cite": c, "meaning": m} for f, c, m in regs],
             "text": {"original": text, "masked": masked},
-            "request": {"mode": "local rules", "direction": checkpoint},
-            "nano": {"engine": "Local rules (offline, regex)"},
+            "request": {"mode": "offline demo rules", "direction": checkpoint},
+            "nano": {"engine": "ProofAgent Guardrail · offline demo rules"},
         }
 
 
